@@ -1,6 +1,15 @@
 #include "Color.h"
 #include "MathY.h"
 
+Color::Color()
+{
+  r = 0;
+  g = 0;
+  b = 0;
+  brightness = 1.0f;
+  UpdateColor();
+}
+
 Color::Color(uint8_t r, uint8_t g, uint8_t b, float brightness)
 {
   this->brightness = brightness;

@@ -5,6 +5,7 @@ using namespace std;
 class Color
 {
 public:
+  Color();
   Color(uint8_t r, uint8_t g, uint8_t b, float brightness = 1);
   ~Color();
   void SetColor(uint8_t r, uint8_t g, uint8_t b);
