@@ -20,6 +20,7 @@ public:
   void Pulse(Range &range, bool turnOff = true, uint16_t stepSize = 1);
   void GapInterval(Range &range, uint16_t gapSize = 1);
   void LitInterval(Range &range, uint16_t litSize = 1, uint16_t gapSize = 1);
+  void Spread(Range &range, bool turnOff = true, uint16_t stepSize = 1);
   void Clear();
 
 private:

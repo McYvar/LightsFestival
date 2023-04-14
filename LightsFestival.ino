@@ -1,9 +1,10 @@
 #include "Strip.h"
 #include "Timer.h"
+#include <vector>
 
 #define LED_AMOUNT 194
 
-Strip myStrip = Strip(LED_AMOUNT, D4); // I have 194
+Strip myStrip = Strip(LED_AMOUNT, D5); // I have 194
 Timer timer;
 
 Color flow = Color(0, 0, 0, 1.0f);
@@ -16,14 +17,17 @@ Color purple = Color(0, 255, 255, 1.0f);
 Color off = Color(0, 0, 0);
 Color colors[] = { red, orange, yellow, green, blue, purple };
 
+vector<Range> spreads = vector<Range>();
+
 unsigned long intervalTimer = 0;
 float flowSpeed = 0.05f;
 
 // setup the ranges
 // Range(Color, start, begin, end, range)
 Range range1 = Range(Color(0, 0, 255, 1.0f), 0, 0, LED_AMOUNT, 5);
-Range range2 = Range(Color(255, 0, 0, 1.0f), 15, 0, LED_AMOUNT, 5);
+Range full = Range(Color(), 0, 0, LED_AMOUNT, LED_AMOUNT);
 
+bool doFill = false;
 
 void setup() 
 {
@@ -35,21 +39,47 @@ void loop()
 {
   timer.Update(millis());
   intervalTimer += timer.deltaTime;
-  if (intervalTimer > 30) 
+  if (intervalTimer > 20) 
   {
+    if (doFill) 
+    {
+      full.color.SetBrightness(full.color.brightness += 0.05f);
+      myStrip.FillRange(full);
+      if (full.color.brightness >= 1) doFill = false;
+    }
+    else if (full.color.brightness > 0)
+    {
+      full.color.SetBrightness(full.color.brightness -= 0.05f);
+      myStrip.FillRange(full);
+    }
+
     intervalTimer = 0;
     myStrip.FillRange(range1);
     GoRandom(range1);
-    //myStrip.Walk(range1);
-    //myStrip.Walk(range2, true, 2);
+
+    for (auto &spread : spreads) 
+    {
+      myStrip.Spread(spread, true, 3);
+    }
+
+    spreads.erase(remove_if(spreads.begin(), spreads.end(),
+    [&](Range range) 
+    {
+      return !range.GetLifeTime();
+    }), spreads.end());
   }
 
-  myStrip.Update();
   InputCommands();
+
+  myStrip.Update();
 }
+
+
 
 void InputCommands()
 {
+  if (!Serial.available()) return;
+
   String command = "";
   while (Serial.available()) 
   {
@@ -58,18 +88,27 @@ void InputCommands()
       command += (char)read;
   }
 
-  if (command == "pulse1")
+  if (command == "Spread")
   {
-    //Serial.println(command);
+    Range temp = Range(range1.color, range1.walkIterator, 0, LED_AMOUNT, 7);
+    temp.SetLifeTime(LED_AMOUNT);
+    spreads.push_back(temp);
+  }
+  else if (command == "Fill" && !doFill)
+  {
+    full.color = range1.color;
+    doFill = true;
   }
   // asuming it's a number
-  else 
+  else
   {
-    range1.walkIterator += command.toInt();
-    if (range1.walkIterator > LED_AMOUNT) range1.walkIterator = 0;
-    if (range1.walkIterator < 0) range1.walkIterator = LED_AMOUNT;
+    int number = command.toInt();
+    if (number >= 0 && number <= 360)
+    {
+      int value = map(command.toInt(), 0, 360, 0, LED_AMOUNT);    
+      range1.walkIterator = value;
+    }
   }
-  Serial.println(command);
 }
 
 void GoNext(uint16_t &i, Color &color) 
